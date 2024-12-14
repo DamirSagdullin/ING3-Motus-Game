@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Game</title>
+    <%- include('common/imports') %>
+  </head>
+  <body>
+    <%- include('common/navbar') %> <% if(typeof userData !== 'undefined') { %>
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-body">
+              <h1 class="card-title mb-4 text-center"><i class="fas fa-gamepad"></i> Welcome to Motus</h1>
+              <form id="wordForm" class="mb-3">
+                <div class="mb-3">
+                  <label for="myInput" class="form-label">Enter a word:</label>
+                  <input type="text" id="myInput" name="myInput" class="form-control" required />
+                </div>
+                <button id="guessBtn" type="submit" class="btn btn-primary"><i class="fa-solid fa-hand-sparkles"></i> Guess</button>
+              </form>
+              <div id="result" class="mb-3">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="col-2">#</th>
+                      <th scope="col" class="col-12">Guess</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attempts">
+                    <tr id="placeholderRow">
+                      <td colspan="2" class="text-center bold">No entries yet</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary float-end" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                <i class="fas fa-cog"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="seedForm" class="mb-3">
+              <div class="mb-3">
+                <label for="newSeed" class="form-label">Enter a new seed:</label>
+                <input type="number" id="newSeed" name="newSeed" class="form-control" required />
+                <p class="mt-2">Current seed: <%= seed %></p>
+              </div>
+              <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-dice"></i> Change Seed</button>
+            </form>
+            <hr />
+            <div class="mb-3">
+              <button
+                type="button"
+                class="btn btn-danger"
+                trigger="hover"
+                data-bs-container="body"
+                data-bs-toggle="popover"
+                data-bs-placement="right"
+                data-bs-content="<%= word %>"
+              >
+                <i class="fa-solid fa-eye"></i> Cheat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/front/js/index.js"></script>
+    <% } else { %>
+
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-body">
+              <h1 class="card-title mb-4 text-center">Welcome to Motus!</h1>
+              <p class="mb-4">
+                Motus is a fun and challenging word game 🎮. Guess the hidden word by trying different letter combinations 🔤. You'll get feedback on each guess
+                which will help you narrow down the possibilities and find the word 🔍. Ready to play? 🚀
+              </p>
+              <div class="d-grid gap-2">
+                <a href="/login" class="btn btn-primary" type="button">Login to Play <i class="fa-solid fa-sign-in"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </body>
+</html>

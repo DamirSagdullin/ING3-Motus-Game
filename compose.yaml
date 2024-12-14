@@ -1,0 +1,202 @@
+services:
+  motus-front:
+    build:
+      context: ./motus-front
+    restart: always
+    networks:
+      - game-net
+      - monitor-net
+
+  motus-users:
+    build:
+      context: ./motus-users
+    depends_on:
+      - postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - game-net
+
+  motus-gateway-1:
+    build:
+      context: ./motus-gateway
+    depends_on:
+      - motus-users
+      - motus-game
+      - motus-score
+      - motus-front
+    restart: always
+    environment:
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_SECRET: ${AUTH0_SECRET}
+    networks:
+      - monitor-net
+      - game-net
+
+  motus-gateway-2:
+    build:
+      context: ./motus-gateway
+    depends_on:
+      - motus-users
+      - motus-game
+      - motus-score
+      - motus-front
+    restart: always
+    environment:
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_SECRET: ${AUTH0_SECRET}
+    networks:
+      - monitor-net
+      - game-net
+
+  motus-game:
+    build:
+      context: ./motus-game
+    depends_on:
+      - motus-users
+    restart: always
+    networks:
+      - monitor-net
+      - game-net
+
+  motus-score:
+    build:
+      context: ./motus-score
+    depends_on:
+      - redis
+      - motus-users
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      - game-net
+
+  haproxy:
+    image: haproxy:latest
+    volumes:
+      - ./volumes/haproxy:/usr/local/etc/haproxy
+    ports:
+      - 3000:3000
+    depends_on:
+      - motus-gateway-1
+      - motus-gateway-2
+    restart: always
+    networks:
+      - game-net
+
+  redis:
+    image: redis:latest
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    restart: always
+    volumes:
+      - ./volumes/data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - game-net
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - game-net
+
+  postgres:
+    image: postgres:latest
+    restart: always
+    volumes:
+      - ./volumes/data/postgres:/var/lib/postgresql/data
+      - ./volumes/initPg.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h postgres", "-U user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - game-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - postgres
+    networks:
+      - game-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3005:3000
+    restart: unless-stopped
+    networks:
+      - monitor-net
+
+  loki:
+    image: grafana/loki
+    container_name: loki
+    ports:
+      - 3006:3100
+    restart: unless-stopped
+    networks:
+      - monitor-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./volumes/prometheus/:/etc/prometheus/
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    expose:
+      - 9090
+    ports:
+      - 3007:9090
+    networks:
+      - monitor-net
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    expose:
+      - 9100
+    ports:
+      - 3008:9100
+    networks:
+      - monitor-net
+
+networks:
+  game-net:
+  monitor-net:
