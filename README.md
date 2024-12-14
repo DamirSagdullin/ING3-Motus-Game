@@ -12,7 +12,7 @@ This project consists of a game called "Motus". The application is implemented u
 
 ## Demo
 
-https://github.com/DamirSagdullin/ING3-Microservices-Project/assets/98918068/bf2d199a-b838-4fca-a740-b6fe3d77d98f
+TBA
 
 ## Features list
 
